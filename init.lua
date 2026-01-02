@@ -296,6 +296,13 @@ vim.api.nvim_create_user_command('B', 'Buffers', {})
 vim.api.nvim_create_user_command('L', 'Lines', {})
 vim.api.nvim_create_user_command('R', 'Rg', {})
 
+-- ★ [수정됨] 탭 순서 옮기기 (Space + , / Space + .)
+-- Space + , (쉼표) : 탭을 왼쪽으로 한 칸 이동
+map('n', '<leader>,', ':-tabmove<CR>', { desc = "Move tab left" })
+
+-- Space + . (마침표) : 탭을 오른쪽으로 한 칸 이동
+map('n', '<leader>.', ':+tabmove<CR>', { desc = "Move tab right" })
+
 -----------------------------------------------------------
 -- 10. LSP & 자동완성
 -----------------------------------------------------------
