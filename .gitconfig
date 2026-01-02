@@ -1,0 +1,32 @@
+[user]
+	email = kimth0312@cyberperseus.com
+	name = Taehyun Kim
+[http]
+	sslCAInfo = /etc/ssl/certs/ca-certificates.crt
+	sslVerify = false
+[sendemail]
+	smtpserver = smtp.gmail.com
+	smtpserverport = 587
+	smtpencryption = tls
+	smtpuser = kimth0312@gmail.com
+	from = Kim Tae Hyun <kimth0312@cyberperseus.com>
+# [diff]
+#	tool = vimdiff
+
+[core]
+    pager = delta
+
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate = true  # use n and N to move between diff sections
+    dark = true      # or light = true, or omit for auto-detection
+	side-by-side = true
+	line-numbers = true
+
+[merge]
+    conflictStyle = zdiff3
+
+[alias]
+	df = diff -W
