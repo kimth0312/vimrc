@@ -202,19 +202,16 @@ map('n', '<C-w>]', ':vsp<CR><C-w>l:execute "tag " . expand("<cword>")<CR>')
 -- 7. Zoom Toggle (NERDTree & Terminal 크기 고정)
 -----------------------------------------------------------
 local function restore_fixed_windows()
-    local cur_win = vim.api.nvim_get_current_win() -- 현재 내가 있는 창 번호
+    local cur_win = vim.api.nvim_get_current_win()
     local wins = vim.api.nvim_tabpage_list_wins(0)
     
     for _, win in ipairs(wins) do
-        -- ★ 핵심: 현재 내가 보고 있는 창(Focus)은 크기 고정 대상에서 제외!
         if win ~= cur_win then
             local buf = vim.api.nvim_win_get_buf(win)
             local ft = vim.bo[buf].filetype
             
-            -- 다른 곳에 있는 NERDTree는 31칸으로 고정
             if ft == 'nerdtree' then
                 vim.api.nvim_win_set_width(win, 31)
-            -- 다른 곳에 있는 터미널은 15줄로 고정
             elseif ft == 'toggleterm' then
                 vim.api.nvim_win_set_height(win, 15)
             end
@@ -224,9 +221,7 @@ end
 
 map('n', '<leader>z', function()
     if vim.t.zoomed then
-        -- [복구 모드] 모든 창을 원래 크기로
         vim.cmd('wincmd =')
-        -- 복구할 때는 모든 특수 창을 다시 고정 크기로 꾹 누름
         local wins = vim.api.nvim_tabpage_list_wins(0)
         for _, win in ipairs(wins) do
             local ft = vim.bo[vim.api.nvim_win_get_buf(win)].filetype
@@ -236,18 +231,44 @@ map('n', '<leader>z', function()
         vim.t.zoomed = false
         print("Windows Restored")
     else
-        -- [확대 모드] 현재 창을 최대화
         vim.cmd('wincmd _')
         vim.cmd('wincmd |')
-        -- 현재 창을 제외한 나머지 사이드바들만 크기 고정
         restore_fixed_windows()
         vim.t.zoomed = true
         print("Window Maximized")
     end
-end, { desc = "Toggle Zoom (Smart Sidebar Protection)" })
+end, { desc = "Toggle Zoom" })
 
 -----------------------------------------------------------
--- 8. 기타 단축키
+-- 8. NERDTree 자동 동기화 (Sync) ★ 복구된 부분
+-----------------------------------------------------------
+vim.api.nvim_create_autocmd("BufEnter", {
+    group = vim.api.nvim_create_augroup("NERDTreeSync", { clear = true }),
+    callback = function()
+        -- 실제 파일이거나 일반 버퍼일 때만 동작
+        if vim.bo.buftype ~= "" or vim.bo.filetype == "nerdtree" or vim.fn.expand("%") == "" then
+            return
+        end
+        
+        -- 현재 탭에 NERDTree가 열려 있는지 확인
+        local nt_win = nil
+        for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+            if vim.bo[vim.api.nvim_win_get_buf(win)].filetype == "nerdtree" then
+                nt_win = win
+                break
+            end
+        end
+        
+        -- NERDTree가 열려 있다면 현재 파일 위치를 찾아서 표시
+        if nt_win then
+            vim.cmd("silent! NERDTreeFind")
+            vim.cmd("wincmd p") -- 포커스를 다시 파일 편집창으로
+        end
+    end,
+})
+
+-----------------------------------------------------------
+-- 9. 기타 단축키 및 명령어
 -----------------------------------------------------------
 map('n', '<F1>', ':tabprevious<CR>')
 map('n', '<F2>', ':tabnew<CR>')
@@ -276,7 +297,7 @@ vim.api.nvim_create_user_command('L', 'Lines', {})
 vim.api.nvim_create_user_command('R', 'Rg', {})
 
 -----------------------------------------------------------
--- 9. LSP & 자동완성
+-- 10. LSP & 자동완성
 -----------------------------------------------------------
 local lspconfig = require('lspconfig')
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
