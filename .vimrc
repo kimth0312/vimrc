@@ -37,6 +37,15 @@ nnoremap <silent> ` :NERDTreeToggle<CR>
 nmap <leader><leader>j <Plug>(easymotion-w)
 nmap <leader><leader>k <Plug>(easymotion-b)
 
+nmap <c-h> <c-w>h
+nmap <c-j> <c-w>j
+nmap <c-k> <c-w>k
+nmap <c-l> <c-w>l
+
+command! B Buffers
+command! L Lines
+command! R Rg
+
 set hlsearch " 검색어 하이라이팅
 set nu " 줄번호
 set autoindent " 자동 들여쓰기
@@ -88,4 +97,3 @@ nnoremap y "+y
 vnoremap y "+y
 
 nnoremap <C-w>] :vsp<CR><C-w>l:execute "tag " . expand("<cword>")<CR>
-
