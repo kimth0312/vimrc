@@ -90,7 +90,6 @@ require("lazy").setup({
     },
     { "lewis6991/gitsigns.nvim", config = true },
     { "nvim-treesitter/nvim-treesitter-context", config = true },
-    { "phaazon/hop.nvim", branch = 'v2', config = true },
 
     -- [LSP & 자동완성]
     { "neovim/nvim-lspconfig" },
@@ -104,11 +103,19 @@ require("lazy").setup({
                 mappings = { '<C-u>', '<C-d>', '<C-b>', '<C-f>',
                              '<C-y>', '<C-e>', 'zt', 'zz', 'zb' },
                 hide_cursor = false,          -- 스크롤 중 커서 숨김
-                stop_eof = true,             -- 파일 끝에서 중지
+                stop_eof = false,             -- 파일 끝에서 중지
                 respect_scrolloff = false,   -- scrolloff 옵션 무시 여부
                 cursor_scroll_step = 1,      -- 커서 스크롤 단계
                 easing_function = "quadratic" -- 애니메이션 효과 (quadratic, cubic, quartic 등)
             })
+        end
+    },
+	-- [빠른 이동 (Hop)] - space+space 기능을 담당
+    {
+        "phaazon/hop.nvim",
+        branch = 'v2',
+        config = function()
+            require('hop').setup({ keys = 'etovxqpdygfblzhckisuran' })
         end
     },
     {
@@ -161,8 +168,15 @@ local function move_window_right()
     local cur_win = vim.api.nvim_get_current_win()
     vim.cmd('wincmd l')
     local target_win = vim.api.nvim_get_current_win()
-    if target_win ~= cur_win and is_sidebar(target_win) then
-        vim.api.nvim_set_current_win(cur_win)
+    if target_win ~= cur_win then
+        if is_sidebar(target_win) then
+            vim.api.nvim_set_current_win(cur_win)
+        else
+            -- 현재 창과 타겟 창의 위치를 교체
+            vim.api.nvim_set_current_win(cur_win)
+            vim.cmd('wincmd x')
+            vim.cmd('wincmd l')
+        end
     end
 end
 
@@ -188,6 +202,25 @@ map('n', '<leader>f', function()
     if vim.bo.filetype == 'NvimTree' then vim.cmd('wincmd p') end
     get_fzf().files()
 end)
+
+-- [Hop 방향성 단어 점프 설정]
+local hop = require('hop')
+local hint_expect = require('hop.hint').HintDirection
+
+-- Space + Space + j : 아래 방향 단어들로 점프
+map('n', '<leader><leader>j', function() 
+    hop.hint_words({ direction = hint_expect.AFTER_CURSOR }) 
+end, { desc = "Hop to words below" })
+
+-- Space + Space + k : 위 방향 단어들로 점프
+map('n', '<leader><leader>k', function() 
+    hop.hint_words({ direction = hint_expect.BEFORE_CURSOR }) 
+end, { desc = "Hop to words above" })
+
+-- ★ [핵심 추가] 검색(n, N) 시 부드러운 스크롤 적용
+-- n: 다음 찾기, N: 이전 찾기 후 화면 중앙(zz)으로 부드럽게 이동
+map('n', 'n', [[n<Cmd>lua require('neoscroll').zz({ half_win_duration = 250, move_cursor = true })<CR>]])
+map('n', 'N', [[N<Cmd>lua require('neoscroll').zz({ half_win_duration = 250, move_cursor = true })<CR>]])
 
 -- [수정 2] Ctrl+w+] 를 세로 분할 태그 점프로 변경
 map('n', '<C-w>]', ':vsp<CR><C-w>l:execute "tag " . expand("<cword>")<CR>', { desc = "Vertical split tag jump" })
@@ -270,7 +303,7 @@ function ToggleFloatingTerminal()
         float_term.buf = vim.api.nvim_create_buf(false, true)
         vim.api.nvim_buf_call(float_term.buf, function() vim.fn.termopen(vim.o.shell) end)
     end
-    local w, h = math.floor(vim.o.columns * 0.8), math.floor(vim.o.lines * 0.8)
+    local w, h = math.floor(vim.o.columns * 0.9), math.floor(vim.o.lines * 0.9)
     float_term.win = vim.api.nvim_open_win(float_term.buf, true, {
         relative = "editor", width = w, height = h,
         col = (vim.o.columns - w) / 2, row = (vim.o.lines - h) / 2,
