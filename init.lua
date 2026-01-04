@@ -150,6 +150,15 @@ require("lazy").setup({
 			vim.keymap.set('n', '<C-/>', 'gcc', { remap = true })
 			vim.keymap.set('v', '<C-/>', 'gc', { remap = true })
 		end
+	},
+	{
+    "windwp/nvim-autopairs",
+    event = "InsertEnter",
+    config = function()
+        require("nvim-autopairs").setup({
+            check_ts = true, -- treesitter 기반으로 더 정확하게
+        })
+    end
 	}
 })
 
