@@ -59,38 +59,6 @@ require("lazy").setup({
     { "sheerun/vim-polyglot" },
     { "tpope/vim-fugitive" },
 
-    -- [터미널 토글 (ToggleTerm)]
-    {
-        "akinsho/toggleterm.nvim",
-        version = "*",
-        config = function()
-            require("toggleterm").setup({
-                size = 15,
-                open_mapping = [[<C-\>]],
-                direction = 'horizontal',
-                shade_terminals = true,
-                start_in_insert = true,
-                persist_size = true,
-                close_on_exit = true,
-            })
-            
-            function _G.set_terminal_keymaps()
-                -- fzf 창에서는 ESC가 창을 닫도록 예외 처리
-                if vim.fn.bufname():find("fzf") then
-                    return
-                end
-                local opts = {buffer = 0}
-                vim.keymap.set('t', '<Esc>', [[<C-\><C-n>]], opts)
-                vim.keymap.set('t', 'jk', [[<C-\><C-n>]], opts)
-                vim.keymap.set('t', '<C-h>', [[<Cmd>wincmd h<CR>]], opts)
-                vim.keymap.set('t', '<C-j>', [[<Cmd>wincmd j<CR>]], opts)
-                vim.keymap.set('t', '<C-k>', [[<Cmd>wincmd k<CR>]], opts)
-                vim.keymap.set('t', '<C-l>', [[<Cmd>wincmd l<CR>]], opts)
-            end
-            vim.cmd('autocmd! TermOpen term://* lua set_terminal_keymaps()')
-        end
-    },
-
     -- [LSP & 자동완성]
     { "neovim/nvim-lspconfig" },
     { "williamboman/mason.nvim", config = true },
@@ -130,6 +98,12 @@ opt.smartcase = true
 opt.incsearch = true
 opt.ruler = true
 opt.updatetime = 0
+opt.statusline = " %<%l:%v [%P]%=%a %h%m%r %F "
+
+if vim.env.LANG and (string.sub(vim.env.LANG, 1, 2) == "ko") then
+    opt.fileencoding = "korea"
+end
+
 opt.statusline = " %<%l:%v [%P]%=%a %h%m%r %F "
 
 if vim.env.LANG and (string.sub(vim.env.LANG, 1, 2) == "ko") then
@@ -308,6 +282,7 @@ map('n', '<leader>.', ':+tabmove<CR>', { desc = "Move tab right" })
 -----------------------------------------------------------
 local lspconfig = require('lspconfig')
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
+vim.lsp.enable("rust_analyzer")
 
 require("mason-lspconfig").setup({
     ensure_installed = { "clangd" },
@@ -345,3 +320,62 @@ vim.diagnostic.config({
     underline = true,
     update_in_insert = false,
 })
+
+
+-----------------------------------------------------------
+-- 11. Experiments
+-----------------------------------------------------------
+
+local float_term = {
+  buf = nil,
+  win = nil,
+}
+
+function ToggleFloatingTerminal()
+  -- 이미 떠 있으면 숨기기
+  if float_term.win and vim.api.nvim_win_is_valid(float_term.win) then
+    vim.api.nvim_win_hide(float_term.win)
+    float_term.win = nil
+    return
+  end
+
+  -- buffer 없으면 생성
+  if not float_term.buf or not vim.api.nvim_buf_is_valid(float_term.buf) then
+    float_term.buf = vim.api.nvim_create_buf(false, true)
+
+    -- terminal 실행
+    vim.api.nvim_buf_call(float_term.buf, function()
+      vim.fn.termopen(vim.o.shell)
+    end)
+
+    -- ⭐ 여기서 바로 terminal keymap을 박아버림
+    local opts = { buffer = float_term.buf }
+    vim.keymap.set('t', '<Esc>', [[<C-\><C-n>]], opts)
+    vim.keymap.set('t', 'jk', [[<C-\><C-n>]], opts)
+  end
+
+  -- floating window 열기
+  local width  = math.floor(vim.o.columns * 0.8)
+  local height = math.floor(vim.o.lines * 0.8)
+
+  float_term.win = vim.api.nvim_open_win(float_term.buf, true, {
+    relative = "editor",
+    width = width,
+    height = height,
+    col = math.floor((vim.o.columns - width) / 2),
+    row = math.floor((vim.o.lines   - height) / 2),
+    style = "minimal",
+    border = "rounded",
+  })
+
+  vim.api.nvim_set_option_value(
+    "winblend",
+    20,
+    { scope = "local", win = float_term.win }
+  )
+
+  vim.cmd("startinsert")
+end
+
+vim.keymap.set("n", [[<C-\>]], ToggleFloatingTerminal)
+
