@@ -305,6 +305,9 @@ map('n', '<leader>,', ':-tabmove<CR>')
 map('n', '<leader>.', ':+tabmove<CR>')
 map('n', '`', ':NvimTreeToggle<CR>', { silent = true })
 
+-- ESC 키를 누르면 검색 하이라이트 해제
+map('n', '<Esc>', '<cmd>noh<CR>', { desc = "Clear search highlights" })
+
 -----------------------------------------------------------
 -- 7. LSP & 자동완성 설정
 -----------------------------------------------------------
