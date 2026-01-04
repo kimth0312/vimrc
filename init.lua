@@ -30,6 +30,12 @@ require("lazy").setup({
                 options = { transparent = false, styles = { comments = 'italic', keywords = 'bold' } }
             })
             vim.cmd('colorscheme github_dark_dimmed')
+
+			vim.cmd([[
+                highlight TreesitterContext guibg=NONE
+                highlight TreesitterContextBottom gui=underline guisp=#484f58
+                highlight TreesitterContextLineNumber guibg=NONE guifg=#484f58
+            ]])
         end
     },
     {
@@ -89,7 +95,19 @@ require("lazy").setup({
         end
     },
     { "lewis6991/gitsigns.nvim", config = true },
-    { "nvim-treesitter/nvim-treesitter-context", config = true },
+    { "nvim-treesitter/nvim-treesitter-context", 
+	  config = function()
+		require('treesitter-context').setup({
+                enable = true,
+                max_lines = 5,           -- 너무 길어지지 않게 최대 5줄만 표시
+                min_window_height = 0,
+                line_numbers = true,
+                multiline_threshold = 20, -- 인자가 많아 줄바꿈된 함수도 잘 잡도록 설정
+                trim_scope = 'outer',    -- 긴 함수에서 바깥쪽 스코프부터 표시
+                mode = 'topline',         -- 커서 위치 기준으로 정확하게 계산
+            })
+        end
+	  },
 
     -- [LSP & 자동완성]
     { "neovim/nvim-lspconfig" },
@@ -164,6 +182,15 @@ vim.api.nvim_create_autocmd("FileType", {
     end,
 })
 
+-- Diagnostic(에러 표시) 설정
+vim.diagnostic.config({
+    virtual_text = false, -- 코드 옆에 뜨는 거슬리는 텍스트 끔
+    signs = true,
+    underline = true,
+    update_in_insert = false,
+    severity_sort = true,
+})
+
 -----------------------------------------------------------
 -- 5. 창 관리 및 사이드바 보호 로직
 -----------------------------------------------------------
@@ -207,6 +234,8 @@ map('n', '<C-h>', '<C-w>h')
 map('n', '<C-j>', '<C-w>j')
 map('n', '<C-k>', '<C-w>k')
 map('n', '<C-l>', '<C-w>l')
+
+map('n', 'gl', vim.diagnostic.open_float, { desc = "Show diagnostic error" })
 
 -----------------------------------------------------------
 -- 6. 단축키 및 명령어 (fzf-lua & Zoom & Tag)
