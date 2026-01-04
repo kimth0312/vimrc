@@ -308,15 +308,11 @@ map('n', '`', ':NvimTreeToggle<CR>', { silent = true })
 -- ESC 키를 누르면 검색 하이라이트 해제
 map('n', '<Esc>', '<cmd>noh<CR>', { desc = "Clear search highlights" })
 
-map('n', 'gr', function()
-    local fzf = require('fzf-lua')
-    -- 현재 커서 아래의 단어를 가져옴
-    local current_word = vim.fn.expand("<cword>")
-    
-    -- LSP References 시도
-    -- 커널 프로젝트에서는 LSP가 가끔 멍때리므로, 바로 grep_cword()를 쓰는 것이 더 빠를 수 있습니다.
-    fzf.grep_cword() 
-end, { desc = "FZF Search Symbol Under Cursor" })
+map('n', 'gr', "<cmd>lua require('fzf-lua').grep_cword()<cr>", { 
+    noremap = true, 
+    silent = true, 
+    desc = "FZF Search Word Under Cursor" 
+})
 
 -----------------------------------------------------------
 -- 7. LSP & 자동완성 설정
