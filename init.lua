@@ -81,7 +81,7 @@ require("lazy").setup({
         build = ":TSUpdate",
         opts = {
             ensure_installed = { "c", "cpp", "rust", "lua", "bash", "make" },
-            highlight = { enable = true, additional_vim_regex_highlighting = false },
+            highlight = { enable = true, additional_vim_regex_highlighting = {"c", "cpp"}, }
         },
         config = function(_, opts)
             local ok, configs = pcall(require, "nvim-treesitter.configs")
@@ -143,6 +143,26 @@ opt.mouse = "a"
 if vim.env.LANG and (string.sub(vim.env.LANG, 1, 2) == "ko") then
     opt.fileencoding = "korea"
 end
+
+vim.api.nvim_create_autocmd("BufReadPost", {
+    callback = function()
+        local mark = vim.api.nvim_buf_get_mark(0, '"')
+        local lcount = vim.api.nvim_buf_line_count(0)
+        if mark[1] > 0 and mark[1] <= lcount then
+            pcall(vim.api.nvim_win_set_cursor, 0, mark)
+        end
+    end,
+})
+
+vim.api.nvim_create_autocmd("FileType", {
+    pattern = { "c", "cpp" },
+    callback = function()
+        vim.cmd([[
+            syntax keyword Keyword __init __exit __meminit __always_inline __user __kernel
+            syntax keyword Keyword asmlinkage SYSCALL_DEFINE[0-6]
+        ]])
+    end,
+})
 
 -----------------------------------------------------------
 -- 5. 창 관리 및 사이드바 보호 로직
@@ -269,6 +289,13 @@ require("mason-lspconfig").setup({
             local opts = { capabilities = capabilities }
             if server_name == "clangd" then
                 opts.cmd = { "clangd", "--query-driver=/**/*gcc,/**/*g++" }
+                -- ⭐ 핵심 2: clangd가 문맥을 분석해 하이라이트를 직접 주도록 설정
+                opts.on_attach = function(client, bufnr)
+                    client.server_capabilities.semanticTokensProvider = {
+                        full = true,
+                        legend = { tokenTypes = { "function", "variable", "parameter" }, tokenModifiers = {} }
+                    }
+                end
             end
             lspconfig[server_name].setup(opts)
         end,
