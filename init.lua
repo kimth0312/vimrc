@@ -96,6 +96,21 @@ require("lazy").setup({
     { "neovim/nvim-lspconfig" },
     { "williamboman/mason.nvim", config = true },
     { "williamboman/mason-lspconfig.nvim" },
+	{
+        "karb94/neoscroll.nvim",
+        config = function()
+            require('neoscroll').setup({
+                -- 이 부분에 아래의 설정값들을 넣을 수 있습니다.
+                mappings = { '<C-u>', '<C-d>', '<C-b>', '<C-f>',
+                             '<C-y>', '<C-e>', 'zt', 'zz', 'zb' },
+                hide_cursor = false,          -- 스크롤 중 커서 숨김
+                stop_eof = true,             -- 파일 끝에서 중지
+                respect_scrolloff = false,   -- scrolloff 옵션 무시 여부
+                cursor_scroll_step = 1,      -- 커서 스크롤 단계
+                easing_function = "quadratic" -- 애니메이션 효과 (quadratic, cubic, quartic 등)
+            })
+        end
+    },
     {
         "hrsh7th/nvim-cmp",
         dependencies = {
