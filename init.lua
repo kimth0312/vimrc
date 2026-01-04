@@ -242,10 +242,7 @@ map('n', 'gl', vim.diagnostic.open_float, { desc = "Show diagnostic error" })
 -----------------------------------------------------------
 local function get_fzf() return require('fzf-lua') end
 
--- :B, :R, :L 명령어
-vim.api.nvim_create_user_command('B', function() get_fzf().buffers() end, {})
-vim.api.nvim_create_user_command('R', function() get_fzf().live_grep() end, {})
-vim.api.nvim_create_user_command('L', function() get_fzf().blines() end, {})
+map('n', '<leader>b', function() require('fzf-lua').buffers() end, { desc = "FZF Buffers" })
 
 map('n', '<leader>f', function()
     if vim.bo.filetype == 'NvimTree' then vim.cmd('wincmd p') end
