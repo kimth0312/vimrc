@@ -142,7 +142,15 @@ require("lazy").setup({
             "hrsh7th/cmp-nvim-lsp", "hrsh7th/cmp-buffer", "hrsh7th/cmp-path",
             "L3MON4D3/LuaSnip", "saadparwaiz1/cmp_luasnip"
         }
-    }
+    },
+	{
+		"numToStr/Comment.nvim",
+		config = function()
+			require('Comment').setup()
+			vim.keymap.set('n', '<C-/>', 'gcc', { remap = true })
+			vim.keymap.set('v', '<C-/>', 'gc', { remap = true })
+		end
+	}
 })
 
 -----------------------------------------------------------
