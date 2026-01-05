@@ -57,28 +57,42 @@ require("lazy").setup({
     },
 
     -- [파일 트리 (nvim-tree)]
-    {
-        "nvim-tree/nvim-tree.lua",
-        dependencies = { "nvim-tree/nvim-web-devicons" },
-        config = function()
-            local function my_on_attach(bufnr)
-                local api = require('nvim-tree.api')
-                local function opts(desc)
-                    return { desc = 'nvim-tree: ' .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
-                end
-                api.config.mappings.default_on_attach(bufnr)
-                vim.keymap.set('n', 's', api.node.open.vertical, opts('Vertical Split'))
-                vim.keymap.set('n', 'i', api.node.open.horizontal, opts('Horizontal Split'))
+	{
+    "nvim-tree/nvim-tree.lua",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+    config = function()
+        local function my_on_attach(bufnr)
+            local api = require('nvim-tree.api')
+            local function opts(desc)
+                return { desc = 'nvim-tree: ' .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
             end
-
-            require("nvim-tree").setup({
-                on_attach = my_on_attach,
-                sync_root_with_cwd = true,
-                update_focused_file = { enable = true, update_root = true },
-                view = { width = 31, side = "left" },
-            })
+            api.config.mappings.default_on_attach(bufnr)
+            vim.keymap.set('n', 's', api.node.open.vertical, opts('Vertical Split'))
+            vim.keymap.set('n', 'i', api.node.open.horizontal, opts('Horizontal Split'))
         end
-    },
+
+        require("nvim-tree").setup({
+            on_attach = my_on_attach,
+            sync_root_with_cwd = true,
+            update_focused_file = { enable = true, update_root = true },
+            view = { width = 31, side = "left" },
+            
+            -- ★ 파일이 안 보일 때 수정해야 할 핵심 설정
+            filters = {
+                dotfiles = false,      -- 점(.)으로 시작하는 파일도 모두 표시
+                custom = { "^.git$" }, -- .git 폴더 자체만 숨기고 나머지는 다 표시
+            },
+            git = {
+                enable = true,
+                ignore = false,        -- ★ 중요: .gitignore에 등록된 파일도 트리에 표시
+                timeout = 500,
+            },
+            renderer = {
+                highlight_git = true,  -- git 상태(ignored 등)를 색상으로 구분해줌
+            }
+        })
+    end
+	},
 
     -- [편집 및 문법 (Treesitter)]
     {
@@ -209,7 +223,7 @@ vim.diagnostic.config({
     severity_sort = true,
 })
 
-opt.guicursor = "n-v-c-sm:block,i-ci-ve:ver25,r-cr-o:hor20,a:blinkwait700-blinkoff400-blinkon250-Cursor/lCursor"
+opt.guicursor = "n-v-c-sm:block-Cursor/lCursor,i-ci-ve:ver25-Cursor/lCursor,r-cr-o:hor20"
 
 -----------------------------------------------------------
 -- 5. 창 관리 및 사이드바 보호 로직
@@ -260,16 +274,6 @@ map('n', 'gl', vim.diagnostic.open_float, { desc = "Show diagnostic error" })
 -----------------------------------------------------------
 local function get_fzf() return require('fzf-lua') end
 
-map('n', '<leader>b', function() require('fzf-lua').buffers() end, { desc = "FZF Buffers" })
-map('n', '<leader>f', function()
-    if vim.bo.filetype == 'NvimTree' then vim.cmd('wincmd p') end
-    get_fzf().files()
-end)
-
-map('n', '<leader>r', function() 
-    require('fzf-lua').live_grep() 
-end, { desc = "FZF Live Grep" })
-
 local hop = require('hop')
 local hint_expect = require('hop.hint').HintDirection
 
@@ -313,7 +317,48 @@ map('n', '<F2>', ':tabnew<CR>')
 map('n', '<F3>', ':tabnext<CR>')
 map('n', '`', ':NvimTreeToggle<CR>', { silent = true })
 map('n', '<Esc>', '<cmd>noh<CR>')
-map('n', 'gr', "<cmd>lua require('fzf-lua').grep_cword()<cr>", { silent = true })
+
+-- nvim-tree의 현재 Root 경로를 가져오는 함수
+local function get_nvim_tree_root()
+    local api = require("nvim-tree.api")
+    -- 현재 트리의 상태를 가져옴
+    local tree_status = api.tree.get_nodes()
+    
+    -- 트리가 열려 있고 root 경로가 존재한다면 해당 경로 반환
+    if tree_status and tree_status.absolute_path then
+        return tree_status.absolute_path
+    end
+    
+    -- 트리가 없거나 경로를 못 가져오면 현재 탭의 CWD 반환
+    return vim.fn.getcwd()
+end
+
+-- [파일 찾기] nvim-tree의 root 기준
+map('n', '<leader>f', function()
+    local root = get_nvim_tree_root()
+    if vim.bo.filetype == 'NvimTree' then vim.cmd('wincmd p') end
+    get_fzf().files({ cwd = root })
+end, { desc = "FZF Files (NvimTree Root)" })
+
+-- [문자열 검색] nvim-tree의 root 기준
+map('n', '<leader>r', function() 
+    local root = get_nvim_tree_root()
+    get_fzf().live_grep({ cwd = root }) 
+end, { desc = "FZF Live Grep (NvimTree Root)" })
+
+-- [버퍼 검색]
+map('n', '<leader>b', function() 
+    get_fzf().buffers() -- 버퍼는 전역이므로 cwd 영향이 적음
+end, { desc = "FZF Buffers" })
+
+-- [현재 단어 검색] nvim-tree의 root 기준
+map('n', 'gr', function()
+    local root = get_nvim_tree_root()
+    get_fzf().grep_cword({ cwd = root })
+end, { silent = true, desc = "Grep Word (NvimTree Root)" })
+
+
+
 
 -----------------------------------------------------------
 -- 7. LSP & 자동완성 설정
