@@ -423,27 +423,16 @@ cmp.setup({
 -----------------------------------------------------------
 -- 8. Floating Terminal (투명도 복원)
 -----------------------------------------------------------
-local float_term = { buf = nil, win = nil }
-
------------------------------------------------------------
--- nvim-tree의 현재 루트 디렉토리를 가져오는 함수
------------------------------------------------------------
 local function get_root()
-    -- nvim-tree의 내부 코어를 통해 현재 트리가 열고 있는 최상위 경로를 가져옵니다.
     local ok, core = pcall(require, "nvim-tree.core")
     if ok and core.get_explorer() then
         local tree_root = core.get_explorer().absolute_path
-        if tree_root then
-            return tree_root
-        end
+        if tree_root then return tree_root end
     end
-
-    -- nvim-tree가 열려있지 않거나 경로를 못 가져올 경우 현재 작업 디렉토리 반환
     return vim.fn.getcwd()
 end
 
 function ToggleFloatingTerminal()
-    -- 1. 현재 탭에 열려있는 터미널 창이 있는지 확인
     local terminal_win = vim.t.terminal_win
     if terminal_win and vim.api.nvim_win_is_valid(terminal_win) then
         vim.api.nvim_win_hide(terminal_win)
@@ -451,23 +440,21 @@ function ToggleFloatingTerminal()
         return
     end
 
-    -- 2. 현재 파일의 프로젝트 루트 확인 (기존 get_root 함수 활용)
     local root_path = get_root()
-
-    -- 3. 현재 탭 전용 터미널 버퍼가 있는지 확인
     local terminal_buf = vim.t.terminal_buf
+
     if not terminal_buf or not vim.api.nvim_buf_is_valid(terminal_buf) then
-        -- 새 버퍼 생성 및 탭 로컬 변수에 저장
         terminal_buf = vim.api.nvim_create_buf(false, true)
         vim.t.terminal_buf = terminal_buf
         
-        -- 해당 버퍼에서 현재 프로젝트 루트를 기반으로 새 셸 실행
         vim.api.nvim_buf_call(terminal_buf, function()
             vim.fn.termopen(vim.o.shell, { cwd = root_path })
         end)
+
+        -- [핵심 추가] 이 터미널 버퍼 내에서만 Esc를 누르면 노멀 모드로 전환
+        vim.keymap.set('t', '<Esc>', [[<C-\><C-n>]], { buffer = terminal_buf, desc = "Exit Terminal Mode" })
     end
 
-    -- 4. 플로팅 윈도우 설정
     local w, h = math.floor(vim.o.columns * 0.9), math.floor(vim.o.lines * 0.9)
     local new_win = vim.api.nvim_open_win(terminal_buf, true, {
         relative = "editor",
@@ -479,7 +466,6 @@ function ToggleFloatingTerminal()
         border = "rounded",
     })
 
-    -- 5. 윈도우 핸들 저장 및 투명도 설정
     vim.t.terminal_win = new_win
     vim.api.nvim_set_option_value("winblend", 20, { scope = "local", win = new_win })
     
@@ -487,7 +473,6 @@ function ToggleFloatingTerminal()
 end
 
 map({ "n", "t" }, [[<C-\>]], ToggleFloatingTerminal)
-
 
 -----------------------------------------------------------
 -- 9. Utility
