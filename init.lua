@@ -209,6 +209,8 @@ vim.diagnostic.config({
     severity_sort = true,
 })
 
+opt.guicursor = "n-v-c-sm:block,i-ci-ve:ver25,r-cr-o:hor20,a:blinkwait700-blinkoff400-blinkon250-Cursor/lCursor"
+
 -----------------------------------------------------------
 -- 5. 창 관리 및 사이드바 보호 로직
 -----------------------------------------------------------
