@@ -149,7 +149,16 @@ require("lazy").setup({
             vim.keymap.set('n', '<C-_>', 'gcc', { remap = true })
             vim.keymap.set('v', '<C-_>', 'gc', { remap = true })
         end
-    }
+    },
+	{
+    "windwp/nvim-autopairs",
+    event = "InsertEnter",
+    config = function()
+        require("nvim-autopairs").setup({
+            check_ts = true, -- treesitter 기반으로 더 정확하게
+        })
+    end
+	}
 })
 
 -----------------------------------------------------------
@@ -352,23 +361,28 @@ local function get_root()
 end
 
 function ToggleFloatingTerminal()
-    local terminal_win = vim.t.terminal_win
-    if terminal_win and vim.api.nvim_win_is_valid(terminal_win) then
-        vim.api.nvim_win_hide(terminal_win)
+    -- 1. 창이 이미 열려있다면 닫기
+    if vim.t.terminal_win and vim.api.nvim_win_is_valid(vim.t.terminal_win) then
+        vim.api.nvim_win_hide(vim.t.terminal_win)
         vim.t.terminal_win = nil
         return
     end
 
     local root_path = get_root()
     local terminal_buf = vim.t.terminal_buf
+
+    -- 2. 터미널 버퍼가 없거나 유효하지 않으면 새로 생성
     if not terminal_buf or not vim.api.nvim_buf_is_valid(terminal_buf) then
         terminal_buf = vim.api.nvim_create_buf(false, true)
         vim.t.terminal_buf = terminal_buf
+        
+        -- 버퍼 생성 직후 터미널 실행
         vim.api.nvim_buf_call(terminal_buf, function()
             vim.fn.termopen(vim.o.shell, { cwd = root_path })
         end)
     end
 
+    -- 3. 창 열기 (항상 최신 크기 반영)
     local w, h = math.floor(vim.o.columns * 0.9), math.floor(vim.o.lines * 0.9)
     local new_win = vim.api.nvim_open_win(terminal_buf, true, {
         relative = "editor",
@@ -379,10 +393,21 @@ function ToggleFloatingTerminal()
         style = "minimal",
         border = "rounded",
     })
-
+    
     vim.t.terminal_win = new_win
-    vim.api.nvim_set_option_value("winblend", 20, { scope = "local", win = new_win })
+    vim.api.nvim_set_option_value("winblend", 10, { scope = "local", win = new_win })
+
+    -- 4. ★ 이 버퍼 내에서만 Esc 단축키 강제 할당 (충돌 방지용)
+    -- 터미널 모드(t) -> 노멀 모드
+    vim.api.nvim_buf_set_keymap(terminal_buf, 't', '<Esc>', [[<C-\><C-n>]], { noremap = true, silent = true })
+    -- 노멀 모드(n) -> 터미널 입력 모드
+    vim.api.nvim_buf_set_keymap(terminal_buf, 'n', '<Esc>', 'i', { noremap = true, silent = true })
+    -- 터미널 모드에서 토글 키(C-\)가 먹히도록 추가
+    vim.api.nvim_buf_set_keymap(terminal_buf, 't', [[<C-\>]], [[<C-\><C-n><cmd>lua ToggleFloatingTerminal()<CR>]], { noremap = true, silent = true })
+
+    -- 5. 열자마자 바로 입력 모드로 진입
     vim.cmd("startinsert")
 end
 
-map({ "n", "t" }, [[<C-\>]], ToggleFloatingTerminal)
+-- 전역 매핑 (Normal 모드에서 터미널 열기)
+vim.keymap.set('n', [[<C-\>]], ToggleFloatingTerminal, { silent = true })
