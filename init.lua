@@ -266,6 +266,10 @@ map('n', '<leader>f', function()
     get_fzf().files()
 end)
 
+map('n', '<leader>r', function() 
+    require('fzf-lua').live_grep() 
+end, { desc = "FZF Live Grep" })
+
 local hop = require('hop')
 local hint_expect = require('hop.hint').HintDirection
 
