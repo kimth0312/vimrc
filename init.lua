@@ -260,6 +260,9 @@ map('n', 'gl', vim.diagnostic.open_float, { desc = "Show diagnostic error" })
 local function get_fzf() return require('fzf-lua') end
 
 map('n', '<leader>b', function() require('fzf-lua').buffers() end, { desc = "FZF Buffers" })
+map('n', '<leader>r', function() 
+    require('fzf-lua').live_grep() 
+end, { desc = "FZF Live Grep" })
 
 map('n', '<leader>f', function()
     if vim.bo.filetype == 'NvimTree' then vim.cmd('wincmd p') end
