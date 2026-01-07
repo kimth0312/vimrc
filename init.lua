@@ -357,7 +357,61 @@ map('n', 'gr', function()
     get_fzf().grep_cword({ cwd = root })
 end, { silent = true, desc = "Grep Word (NvimTree Root)" })
 
+-- 1. 연속 리사이즈 함수 (이전과 동일)
+local function start_resize_mode(direction_cmd)
+    vim.cmd(direction_cmd)
+    vim.cmd("redraw")
+    print("-- Resize mode --")
 
+    while true do
+        local ok, char = pcall(vim.fn.getchar)
+        if not ok then break end
+        local key = vim.fn.nr2char(char)
+
+        if key == "," then
+            vim.cmd("vertical resize -5")
+            vim.cmd("redraw")
+        elseif key == "." then
+            vim.cmd("vertical resize +5")
+            vim.cmd("redraw")
+        else
+            local n_key = vim.api.nvim_replace_termcodes(key, true, false, true)
+            vim.api.nvim_feedkeys(n_key, 'm', true)
+            break
+        end
+    end
+end
+
+-- 2. 스마트 리셋 함수: 현재 윈도우만 타겟팅
+local function reset_current_window_smart()
+    local cur_win = vim.api.nvim_get_current_win()
+    local cur_buf = vim.api.nvim_win_get_buf(cur_win)
+    local ft = vim.bo[cur_buf].filetype
+
+    if ft == "NvimTree" then
+        -- 1) 현재 창이 NvimTree라면 정확히 31로 고정
+        -- 이때 옆에 있는 코드 창들의 '상대적 비율'은 깨지지 않고 전체 너비만 조정됩니다.
+        vim.api.nvim_win_set_width(cur_win, 31)
+        print("-- NvimTree size restored --")
+    else
+        -- 2) 현재 창이 일반 코드 창일 경우
+        -- '초기 상태'인 균등 분할(wincmd =)을 수행하되, 
+        -- NvimTree가 있다면 걔는 31로 다시 고정해서 사이드바가 커지는걸 방지합니다.
+        vim.cmd('wincmd =')
+        for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+            local buf = vim.api.nvim_win_get_buf(win)
+            if vim.bo[buf].filetype == 'NvimTree' then
+                vim.api.nvim_win_set_width(win, 31)
+            end
+        end
+        print("-- Text editor size restored --")
+    end
+end
+
+-- 단축키 매핑
+map('n', '<leader>,', function() start_resize_mode("vertical resize -5") end, { desc = "Continuous Decrease Width" })
+map('n', '<leader>.', function() start_resize_mode("vertical resize +5") end, { desc = "Continuous Increase Width" })
+map('n', '<leader>=', reset_current_window_smart, { silent = true, desc = "Smart Reset Current Window" })
 
 
 -----------------------------------------------------------
