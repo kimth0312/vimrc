@@ -67,6 +67,10 @@ require("lazy").setup({
                 return { desc = 'nvim-tree: ' .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
             end
             api.config.mappings.default_on_attach(bufnr)
+
+			vim.keymap.set('n', '<C-e>', '3<C-e>', opts('Scroll Down'))
+		    vim.keymap.set('n', '<C-y>', '3<C-y>', opts('Scroll Up'))
+
             vim.keymap.set('n', 's', api.node.open.vertical, opts('Vertical Split'))
             vim.keymap.set('n', 'i', api.node.open.horizontal, opts('Horizontal Split'))
         end
