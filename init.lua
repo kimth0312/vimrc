@@ -425,23 +425,37 @@ local lspconfig = require('lspconfig')
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
 require("mason-lspconfig").setup({
-    ensure_installed = { "clangd", "rust_analyzer" },
+    ensure_installed = { "rust_analyzer" }, -- clangd 제거됨
     handlers = {
         function(server_name)
             local opts = { capabilities = capabilities }
-            if server_name == "clangd" then
-                opts.cmd = { "clangd", "--query-driver=/**/*gcc,/**/*g++" }
-                opts.on_attach = function(client, bufnr)
-                    client.server_capabilities.semanticTokensProvider = {
-                        full = true,
-                        legend = { tokenTypes = { "function", "variable", "parameter" }, tokenModifiers = {} }
-                    }
-                end
-            end
-            lspconfig[server_name].setup(opts)
+            -- 여기에 다른 서버(rust_analyzer 등)의 공통 설정이 들어갑니다.
+            require("lspconfig")[server_name].setup(opts)
         end,
+        -- 만약 rust_analyzer만 따로 설정하고 싶다면 여기에 추가 가능
     }
 })
+
+-- 1. 설정을 vim.lsp.config에 직접 할당합니다.
+vim.lsp.config.clangd = {
+    -- 시스템 clangd 사용
+    cmd = { "clangd", "--query-driver=/**/*gcc,/**/*g++" },
+    
+    capabilities = capabilities,
+    
+    -- on_attach 부분을 수정하세요
+    on_attach = function(client, bufnr)
+        -- [[ 문제의 원인이었던 semanticTokensProvider 설정을 지웠습니다 ]]
+        
+        -- 만약 하이라이팅을 아예 끄고 싶다면 아래 주석을 해제해서 nil을 넣으세요.
+        -- client.server_capabilities.semanticTokensProvider = nil 
+    end,
+}
+
+vim.lsp.enable("clangd")
+
+-- 2. 설정이 끝난 후 LSP를 활성화합니다.
+vim.lsp.enable("clangd")
 
 local cmp = require('cmp')
 cmp.setup({
@@ -520,3 +534,15 @@ end
 
 -- 전역 매핑 (Normal 모드에서 터미널 열기)
 vim.keymap.set('n', [[<C-\>]], ToggleFloatingTerminal, { silent = true })
+
+vim.g.clipboard = {
+  name = 'OSC 52',
+  copy = {
+    ['+'] = require('vim.ui.clipboard.osc52').copy('+'),
+    ['*'] = require('vim.ui.clipboard.osc52').copy('*'),
+  },
+  paste = {
+    ['+'] = require('vim.ui.clipboard.osc52').paste('+'),
+    ['*'] = require('vim.ui.clipboard.osc52').paste('*'),
+  },
+}
