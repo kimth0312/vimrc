@@ -44,3 +44,6 @@ function yz() {
 	[ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && builtin cd -- "$cwd"
 	rm -f -- "$tmp"
 }
+
+# fzf-git.sh 로드
+source ~/fzf-git.sh/fzf-git.sh
