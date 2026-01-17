@@ -198,6 +198,8 @@ opt.clipboard = "unnamedplus"
 -- ★ 인코딩 설정: UTF-8 우선, 필요 시 한글 지원
 opt.fileencodings = "utf-8,korea,cp949"
 opt.encoding = "utf-8"
+vim.opt.number = true
+vim.opt.relativenumber = true
 
 vim.api.nvim_create_autocmd("BufReadPost", {
     callback = function()
