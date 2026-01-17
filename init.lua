@@ -192,6 +192,10 @@ opt.updatetime = 250
 opt.scrolloff = 2
 opt.mouse = "a"
 
+-- 현재 라인은 절대 번호, 다른 라인은 상대 번호 (Hybrid)
+vim.opt.number = true
+vim.opt.relativenumber = true
+
 if vim.env.LANG and (string.sub(vim.env.LANG, 1, 2) == "ko") then
     opt.fileencoding = "korea"
 end
