@@ -111,11 +111,32 @@ require("lazy").setup({
             if ok then configs.setup(opts) end
         end
     },
-    { "lewis6991/gitsigns.nvim", config = true },
-    { 
-        "nvim-treesitter/nvim-treesitter-context",  
-        config = function()
-            require('treesitter-context').setup({
+	{
+	  "lewis6991/gitsigns.nvim",
+	  event = { "BufReadPre", "BufNewFile" }, -- (선택) 파일 열 때 로드
+	  opts = {
+		-- 1. 현재 라인 Blame 활성화
+		current_line_blame = true,
+
+		-- 2. Blame 표시 옵션
+		current_line_blame_opts = {
+		  virt_text = true,
+		  virt_text_pos = 'eol', -- 'eol': 라인 끝, 'right_align': 오른쪽 정렬
+		  delay = 300,           -- 0.3초 대기 후 표시 (너무 빠르면 거슬릴 수 있음)
+		  ignore_whitespace = false,
+		},
+
+		-- 3. 포맷 설정 (여기에 해시를 추가했습니다)
+		-- <abbrev_sha>: 짧은 해시 (예: a1b2c3d)
+		-- <author>: 작성자
+		-- <author_time>: 시간
+		-- <summary>: 커밋 메시지
+		current_line_blame_formatter = '<author>, <author_time:%Y-%m-%d> - <summary> <abbrev_sha>',
+	  }
+	},
+    { "nvim-treesitter/nvim-treesitter-context", 
+	  config = function()
+		require('treesitter-context').setup({
                 enable = true,
                 max_lines = 5,
                 line_numbers = true,
