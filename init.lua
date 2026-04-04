@@ -134,34 +134,34 @@ require("lazy").setup({
 		current_line_blame_formatter = '<author>, <author_time:%Y-%m-%d> - <summary> <abbrev_sha>',
 
 		-- 2. 단축키 설정 (on_attach 내부)
-		on_attach = function(bufnr)
-		  local gs = require('gitsigns') -- 여기가 수정됨 (더 안전함)
+    on_attach = function(bufnr)
+      local gs = require('gitsigns') -- 여기가 수정됨 (더 안전함)
 
-		  local function map(mode, l, r, opts)
-			opts = opts or {}
-			opts.buffer = bufnr
-			vim.keymap.set(mode, l, r, opts)
-		  end
+      local function map(mode, l, r, opts)
+        opts = opts or {}
+        opts.buffer = bufnr
+        vim.keymap.set(mode, l, r, opts)
+      end
 
-		  -- Navigation
-		  map('n', ']c', function()
-			if vim.wo.diff then return ']c' end
-			vim.schedule(function() gs.next_hunk() end)
-			return '<Ignore>'
-		  end, { expr = true, desc = "Next Hunk" })
+      -- Navigation
+      map('n', ']c', function()
+        if vim.wo.diff then return ']c' end
+        vim.schedule(function() gs.next_hunk() end)
+        return '<Ignore>'
+      end, { expr = true, desc = "Next Hunk" })
 
-		  map('n', '[c', function()
-			if vim.wo.diff then return '[c' end
-			vim.schedule(function() gs.prev_hunk() end)
-			return '<Ignore>'
-		  end, { expr = true, desc = "Prev Hunk" })
+      map('n', '[c', function()
+        if vim.wo.diff then return '[c' end
+        vim.schedule(function() gs.prev_hunk() end)
+        return '<Ignore>'
+      end, { expr = true, desc = "Prev Hunk" })
 
-		  -- Actions
-		  map('n', '<leader>hp', gs.preview_hunk, { desc = "Preview Hunk" })
-		  map('n', '<leader>hd', gs.diffthis, { desc = "Diff This" })
-		  map('n', '<leader>hD', function() gs.diffthis('~') end, { desc = "Diff Last Commit" })
-		  map('n', '<leader>tb', gs.toggle_current_line_blame, { desc = "Toggle Blame" })
-		end,
+      -- Actions
+      map('n', '<leader>hp', gs.preview_hunk, { desc = "Preview Hunk" })
+      map('n', '<leader>hd', gs.diffthis, { desc = "Diff This" })
+      map('n', '<leader>hD', function() gs.diffthis('~') end, { desc = "Diff Last Commit" })
+      map('n', '<leader>tb', gs.toggle_current_line_blame, { desc = "Toggle Blame" })
+    end,
 	  }
 	},
     { "nvim-treesitter/nvim-treesitter-context", 
@@ -228,7 +228,20 @@ require("lazy").setup({
             check_ts = true, -- treesitter 기반으로 더 정확하게
         })
     end
+	},
+	{
+	  'dmtrKovalenko/fff.nvim',
+	  build = function()
+		require("fff.download").download_binary()
+	  end,
+	  config = function()
+		require('fff').setup({})
+	  end
 	}
+
+-- 3. 검색 창 UI 커스텀 (선택 사항)
+-- 필요하다면 아래 명령어로 검색 창의 투명도나 테두리를 조절할 수 있습니다.
+-- vim.api.nvim_set_hl(0, "FffNormal", { bg = "none" })
 })
 
 -----------------------------------------------------------
@@ -330,22 +343,12 @@ map('n', '<C-l>', '<C-w>l')
 map('n', 'gl', vim.diagnostic.open_float, { desc = "Show diagnostic error" })
 
 -----------------------------------------------------------
--- 6. 단축키 및 명령어 (fzf-lua & Zoom & Tag)
+-- 6. 단축키 및 명령어 (Search & Zoom & Tag)
 -----------------------------------------------------------
 local function get_fzf() return require('fzf-lua') end
 
 
 -- [Hop 방향성 단어 점프 설정]
-map('n', '<leader>b', function() require('fzf-lua').buffers() end, { desc = "FZF Buffers" })
-map('n', '<leader>f', function()
-    if vim.bo.filetype == 'NvimTree' then vim.cmd('wincmd p') end
-    get_fzf().files()
-end)
-
-map('n', '<leader>r', function() 
-    require('fzf-lua').live_grep() 
-end, { desc = "FZF Live Grep" })
-
 local hop = require('hop')
 local hint_expect = require('hop.hint').HintDirection
 
@@ -426,8 +429,8 @@ end, { desc = "FZF Files (NvimTree Root)" })
 -- [문자열 검색] nvim-tree의 root 기준
 map('n', '<leader>r', function() 
     local root = get_nvim_tree_root()
-    get_fzf().live_grep({ cwd = root }) 
-end, { desc = "FZF Live Grep (NvimTree Root)" })
+    require('fff').live_grep({ cwd = root })
+end, { desc = "FFF Live Grep (NvimTree Root)" })
 
 -- [버퍼 검색]
 map('n', '<leader>b', function() 
@@ -437,8 +440,8 @@ end, { desc = "FZF Buffers" })
 -- [현재 단어 검색] nvim-tree의 root 기준
 map('n', 'gr', function()
     local root = get_nvim_tree_root()
-    get_fzf().grep_cword({ cwd = root })
-end, { silent = true, desc = "Grep Word (NvimTree Root)" })
+    require('fff').live_grep({ cwd = root, query = vim.fn.expand("<cword>") })
+end, { silent = true, desc = "FFF Grep Word (NvimTree Root)" })
 
 -----------------------------------------------------------
 -- 창 크기 연속 조절 및 스마트 리셋 (영향 최소화 버전)
@@ -597,4 +600,3 @@ map({ "n", "t" }, [[<C-\>]], ToggleFloatingTerminal)
 -----------------------------------------------------------
 -- 9. Utility
 -----------------------------------------------------------
-
